@@ -1,5 +1,8 @@
 ﻿(set-language-environment "UTF-8")
 
+;; Font and spacing
+(set-frame-font "JetBrains Mono-13" nil t)
+(setq-default line-spacing 0.2)
 
 ;; LSP Mode stuff
 (use-package lsp-mode
