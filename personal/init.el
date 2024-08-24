@@ -39,8 +39,8 @@
   :ensure t
   :defer t
   :bind (:map global-map
-              ("C-1" . 'treemacs)
-              ("C-<f8>" . 'treemacs-select-window))
+              
+              )
   :config (setq treemacs-width 40
                 treemacs-file-event-delay 500 ; default is 2000
                 treemacs-file-follow-delay 0.1 ; default is 0.2
