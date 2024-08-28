@@ -9,6 +9,10 @@
         (treemacs-select-window)
       (treemacs))))
 
-(global-set-key (kbd "C-1") 'my/treemacs-toggle)
+(with-eval-after-load 'treemacs
+  (global-set-key (kbd "C-1") 'my/treemacs-toggle))
 
 (global-set-key (kbd "C-3") 'magit-status)
+
+
+
