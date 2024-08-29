@@ -11,10 +11,12 @@
 (setq-default line-spacing 0.2)
 
 ;; Theme
-(require 'ef-themes)
-(setq ef-themes-to-toggle '(ef-melissa-light ef-duo-dark))
-(mapc #'disable-theme custom-enabled-themes)
-(ef-themes-select 'ef-duo-dark)
+(use-package ef-themes
+  :ensure t
+  :config
+  (setq ef-themes-to-toggle '(ef-melissa-light ef-duo-dark))
+  (mapc #'disable-theme custom-enabled-themes)
+  (ef-themes-select 'ef-duo-dark))
 
 ;; Eglot
 (use-package eglot
@@ -73,11 +75,12 @@
 (setq prelude-whitespace nil)
 
 ;; Enable YASnippet
-(require 'yasnippet)
-(yas-global-mode 1)
+(use-package yasnippet
+  :ensure t
+  :config (yas-global-mode 1))
 
 ;; Enable Solaire - Makes the code buffer slightly different to distinguish from popups, sidebars and log buffers.
-(solaire-global-mode +1)
+;; (solaire-global-mode +1)
 
 (use-package treemacs
   :ensure t
@@ -91,6 +94,7 @@
   (treemacs-filewatch-mode)) 
 
 (use-package treemacs-projectile
+  :ensure t
   :after (treemacs projectile))
 
 (setq treesit-language-source-alist
@@ -152,3 +156,5 @@
 ;; Disable super keybindings
 (setq prelude-super-keybindings nil)
 
+(when (eq system-type 'darwin) ;; On mac, use command as ctrl modifier.
+  (setq mac-command-modifier 'control))
