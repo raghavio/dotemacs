@@ -20,7 +20,7 @@
 
 ;; Eglot
 (use-package eglot
-    :hook (prog-mode . eglot-ensure)
+    ;;:hook (prog-mode . eglot-ensure)
     ;; The first 5 bindings aren't needed here, but are a good
     ;; reminder of what they are bound too
     :bind (("M-TAB" . completion-at-point)
@@ -102,7 +102,6 @@
      (cmake "https://github.com/uyha/tree-sitter-cmake")
      (css "https://github.com/tree-sitter/tree-sitter-css")
      (elisp "https://github.com/Wilfred/tree-sitter-elisp")
-     (go "https://github.com/tree-sitter/tree-sitter-go")
      (html "https://github.com/tree-sitter/tree-sitter-html")
      (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
      (json "https://github.com/tree-sitter/tree-sitter-json")
@@ -110,8 +109,6 @@
      (markdown "https://github.com/ikatyang/tree-sitter-markdown")
      (python "https://github.com/tree-sitter/tree-sitter-python")
      (toml "https://github.com/tree-sitter/tree-sitter-toml")
-     (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
-     (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
      (yaml "https://github.com/ikatyang/tree-sitter-yaml")
      (ruby "https://github.com/tree-sitter/tree-sitter-ruby")))
 
@@ -123,6 +120,14 @@
   :custom
   (ruby-indent-level 2)
   (ruby-indent-tabs-mode nil))
+
+(use-package inf-ruby
+  :ensure t
+  :config
+  (add-hook 'after-init-hook 'inf-ruby-switch-setup)
+  (add-hook 'compilation-filter-hook 'inf-ruby-auto-enter-and-focus)
+  (add-hook 'ruby-base-mode 'inf-ruby-minor-mode)
+  (inf-ruby-enable-auto-breakpoint))
 
 (use-package eldoc
   :init
@@ -157,4 +162,42 @@
 (setq prelude-super-keybindings nil)
 
 (when (eq system-type 'darwin) ;; On mac, use command as ctrl modifier.
-  (setq mac-command-modifier 'control))
+  (setq mac-command-modifier 'control)
+  (setq mac-control-modifier 'super))
+
+(use-package vterm
+  :ensure t)
+
+(defvar custom-vterm-buffer nil
+  "Buffer used for the bottom vterm.")
+
+(defun custom-toggle-vterm-bottom ()
+  "Toggle vterm buffer at the bottom, occupying 20% of the frame.
+   Set directory to projectile's project root if available."
+  (interactive)
+  (if (and custom-vterm-buffer
+           (get-buffer-window custom-vterm-buffer))
+      (delete-window (get-buffer-window custom-vterm-buffer))
+    (let* ((buffer (or custom-vterm-buffer
+                       (generate-new-buffer "vterm")))
+           (window-height (floor (* 0.2 (frame-height))))
+           (project-root (projectile-project-root)))
+      (setq custom-vterm-buffer buffer)
+      (with-current-buffer buffer
+        (unless (eq major-mode 'vterm-mode)
+          (vterm-mode))
+        (when project-root
+          (vterm-send-string (concat "cd " project-root "\n"))))
+      (display-buffer-in-side-window
+       buffer
+       `((side . bottom)
+         (slot . 0)
+         (window-height . ,window-height)
+         (window-parameters . ((no-delete-other-windows . t)))))
+      (select-window (get-buffer-window buffer))
+      (set-window-text-height (get-buffer-window buffer) window-height))))
+
+(global-set-key (kbd "C-2") 'custom-toggle-vterm-bottom)
+
+(use-package rg
+  :ensure t)
