@@ -56,13 +56,11 @@
     ;; Add a hook to enable auto-complete-at-point when eglot is enabled
     ;; this allows use to remove the hook on 'post-self-insert-hook if
     ;; eglot is disabled in the current buffer
-    (add-hook 'eglot-managed-mode-hook (lambda ()
-                                         (if eglot--managed-mode
-                                             (add-hook 'post-self-insert-hook #'auto-complete-at-point nil t)
-                                           (remove-hook 'post-self-insert-hook #'auto-complete-at-point t)))))
-
-(with-eval-after-load 'eglot ;; Not sure if this is redundant.
-  (add-to-list 'eglot-server-programs '((ruby-mode ruby-ts-mode) "ruby-lsp")))
+    ;; (add-hook 'eglot-managed-mode-hook (lambda ()
+    ;;                                      (if eglot--managed-mode
+    ;;                                          (add-hook 'post-self-insert-hook #'auto-complete-at-point nil t)
+    ;;                                       (remove-hook 'post-self-insert-hook #'auto-complete-at-point t))))
+    )
 
 ;; Jarchive teaches emacs how to open project dependencies that reside inside jar files.
 (use-package jarchive
@@ -161,9 +159,9 @@
 ;; Disable super keybindings
 (setq prelude-super-keybindings nil)
 
-(when (eq system-type 'darwin) ;; On mac, use command as ctrl modifier.
-  (setq mac-command-modifier 'control)
-  (setq mac-control-modifier 'super))
+(when (eq system-type 'darwin) ;; On mac, use command as ctrl modifier
+    (setq mac-command-modifier 'control)
+    (setq mac-control-modifier 'super))
 
 (use-package vterm
   :ensure t)
@@ -201,3 +199,26 @@
 
 (use-package rg
   :ensure t)
+
+(use-package robe
+  :ensure t
+  :hook ((ruby-mode . robe-mode)
+         (ruby-ts-mode . robe-mode)))
+
+(use-package company
+  :ensure t
+  :config
+  (add-to-list 'company-backends 'company-robe))
+
+;; Add Projectile Rails package
+(use-package projectile-rails
+  :ensure t
+  :after projectile
+  :diminish projectile-rails-mode
+  :hook ((ruby-mode . projectile-rails-mode)  ;; Enable for ruby-mode
+         (ruby-ts-mode . projectile-rails-mode)  ;; Enable for ruby-ts-mode
+         (projectile-mode . projectile-rails-global-mode))  ;; Auto-enable for Rails projects
+  :config
+  ;; Set to 'completing-read for Vertico compatibility
+  (setq projectile-rails-completion-system 'completing-read)  ;; Can also be 'helm or 'ivy
+  (define-key projectile-rails-mode-map (kbd "C-c r") 'projectile-rails-command-map))
