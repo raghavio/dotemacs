@@ -13,5 +13,4 @@
 (global-set-key (kbd "C-1") 'my/treemacs-toggle)
 (global-set-key (kbd "C-3") 'magit-status)
 
-
-
+(define-key smartparens-mode-map (kbd "M-?") nil) ; Unbind smartparen's sp-convolute-sexp for xref-find-ref
