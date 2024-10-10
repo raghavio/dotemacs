@@ -200,10 +200,10 @@
 (use-package rg
   :ensure t)
 
-(use-package robe
-  :ensure t
-  :hook ((ruby-mode . robe-mode)
-         (ruby-ts-mode . robe-mode)))
+;; (use-package robe
+;;   :ensure t
+;;   :hook ((ruby-mode . robe-mode)
+;;          (ruby-ts-mode . robe-mode)))
 
 (use-package company
   :ensure t
