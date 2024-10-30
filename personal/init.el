@@ -1,4 +1,6 @@
-﻿(set-language-environment "UTF-8")
+﻿(setq auth-sources '("~/.authinfo"))
+
+(set-language-environment "UTF-8")
 
 (when scroll-bar-mode
   (scroll-bar-mode -1))
@@ -7,7 +9,7 @@
 (add-hook 'prog-mode-hook #'display-line-numbers-mode)
 
 ;; Font and spacing
-(set-frame-font "JetBrains Mono-13" nil t)
+(set-frame-font "JetBrains Mono-16" nil t)
 (setq-default line-spacing 0.2)
 
 ;; Theme
@@ -135,26 +137,26 @@
   :ensure t
   :magic "\\.md\\'")
 
-(use-package nano-modeline
-  :ensure t
-  :init
-  (nano-modeline-prog-mode t)
-  :custom
-  (nano-modeline-position 'nano-modeline-footer)
-  :hook
-  (prog-mode           . nano-modeline-prog-mode)
-  (text-mode           . nano-modeline-text-mode)
-  (org-mode            . nano-modeline-org-mode)
-  (pdf-view-mode       . nano-modeline-pdf-mode)
-  (mu4e-headers-mode   . nano-modeline-mu4e-headers-mode)
-  (mu4e-view-mode      . nano-modeline-mu4e-message-mode)
-  (elfeed-show-mode    . nano-modeline-elfeed-entry-mode)
-  (elfeed-search-mode  . nano-modeline-elfeed-search-mode)
-  (term-mode           . nano-modeline-term-mode)
-  (xwidget-webkit-mode . nano-modeline-xwidget-mode)
-  (messages-buffer-mode . nano-modeline-message-mode)
-  (org-capture-mode    . nano-modeline-org-capture-mode)
-  (org-agenda-mode     . nano-modeline-org-agenda-mode))
+;; (use-package nano-modeline
+;;   :ensure t
+;;   :init
+;;   (nano-modeline-prog-mode t)
+;;   :custom
+;;   (nano-modeline-position 'nano-modeline-footer)
+;;   :hook
+;;   (prog-mode           . nano-modeline-prog-mode)
+;;   (text-mode           . nano-modeline-text-mode)
+;;   (org-mode            . nano-modeline-org-mode)
+;;   (pdf-view-mode       . nano-modeline-pdf-mode)
+;;   (mu4e-headers-mode   . nano-modeline-mu4e-headers-mode)
+;;   (mu4e-view-mode      . nano-modeline-mu4e-message-mode)
+;;   (elfeed-show-mode    . nano-modeline-elfeed-entry-mode)
+;;   (elfeed-search-mode  . nano-modeline-elfeed-search-mode)
+;;   (term-mode           . nano-modeline-term-mode)
+;;   (xwidget-webkit-mode . nano-modeline-xwidget-mode)
+;;   (messages-buffer-mode . nano-modeline-message-mode)
+;;   (org-capture-mode    . nano-modeline-org-capture-mode)
+;;   (org-agenda-mode     . nano-modeline-org-agenda-mode))
 
 ;; Disable super keybindings
 (setq prelude-super-keybindings nil)
@@ -222,3 +224,10 @@
   ;; Set to 'completing-read for Vertico compatibility
   (setq projectile-rails-completion-system 'completing-read)  ;; Can also be 'helm or 'ivy
   (define-key projectile-rails-mode-map (kbd "C-c r") 'projectile-rails-command-map))
+
+(use-package gptel
+  :ensure t)
+
+(use-package forge
+  :ensure t
+  :after magit)
