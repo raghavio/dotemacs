@@ -1,12 +1,6 @@
 ﻿(setq auth-sources '("~/.authinfo"))
-
+(add-to-list 'load-path "~/.emacs.d/packages/")
 (set-language-environment "UTF-8")
-
-(when scroll-bar-mode
-  (scroll-bar-mode -1))
-
-;; Prelude's line number setting enables it for all buffers (treemacs etc.). I only want it for programming buffers.
-(add-hook 'prog-mode-hook #'display-line-numbers-mode)
 
 ;; Font and spacing
 (set-frame-font "JetBrains Mono-16" nil t)
@@ -18,9 +12,9 @@
   :config
   (setq ef-themes-to-toggle '(ef-melissa-light ef-duo-dark))
   (mapc #'disable-theme custom-enabled-themes)
-  (ef-themes-select 'ef-duo-dark))
+  (ef-themes-select 'ef-melissa-light))
 
-;; Eglot
+;; eglot
 (use-package eglot
     ;;:hook (prog-mode . eglot-ensure)
     ;; The first 5 bindings aren't needed here, but are a good
@@ -168,44 +162,13 @@
 (use-package vterm
   :ensure t)
 
-(defvar custom-vterm-buffer nil
-  "Buffer used for the bottom vterm.")
-
-(defun custom-toggle-vterm-bottom ()
-  "Toggle vterm buffer at the bottom, occupying 20% of the frame.
-   Set directory to projectile's project root if available."
-  (interactive)
-  (if (and custom-vterm-buffer
-           (get-buffer-window custom-vterm-buffer))
-      (delete-window (get-buffer-window custom-vterm-buffer))
-    (let* ((buffer (or custom-vterm-buffer
-                       (generate-new-buffer "vterm")))
-           (window-height (floor (* 0.2 (frame-height))))
-           (project-root (projectile-project-root)))
-      (setq custom-vterm-buffer buffer)
-      (with-current-buffer buffer
-        (unless (eq major-mode 'vterm-mode)
-          (vterm-mode))
-        (when project-root
-          (vterm-send-string (concat "cd " project-root "\n"))))
-      (display-buffer-in-side-window
-       buffer
-       `((side . bottom)
-         (slot . 0)
-         (window-height . ,window-height)
-         (window-parameters . ((no-delete-other-windows . t)))))
-      (select-window (get-buffer-window buffer))
-      (set-window-text-height (get-buffer-window buffer) window-height))))
-
-(global-set-key (kbd "C-2") 'custom-toggle-vterm-bottom)
-
 (use-package rg
   :ensure t)
 
-;; (use-package robe
-;;   :ensure t
-;;   :hook ((ruby-mode . robe-mode)
-;;          (ruby-ts-mode . robe-mode)))
+(use-package robe
+  :ensure t
+  :hook ((ruby-mode . robe-mode)
+         (ruby-ts-mode . robe-mode)))
 
 (use-package company
   :ensure t
@@ -231,3 +194,93 @@
 (use-package forge
   :ensure t
   :after magit)
+
+(use-package rubocop
+  :ensure t
+  :config
+  (add-hook 'ruby-mode-hook #'rubocop-mode)
+  (setq rubocop-format-on-save t))
+
+(use-package popper
+  :ensure t
+  :bind (("C-`"   . popper-toggle)
+         ("M-`"   . popper-cycle)
+         ("C-M-`" . popper-toggle-type))
+  :init
+  (setq popper-reference-buffers
+        '("\\*Messages\\*"
+          "Output\\*$"
+          "\\*Async Shell Command\\*"
+          "\\*rg\\*"
+          "\\*xref\\*"
+          "\\*Occur\\*"
+          "\\*Backtrace\\*"
+          help-mode
+          compilation-mode
+          "^\\*eshell.*\\*$" eshell-mode
+          "^\\*shell.*\\*$"  shell-mode
+          "^\\*term.*\\*$"   term-mode
+          "^\\*vterm*\\*$"  vterm-mode))
+  (popper-mode +1)
+  (popper-echo-mode +1) ;; For echo area hints
+  (setq popper-window-height 0.25)
+  (setq popper-group-function #'popper-group-by-projectile))
+
+(use-package magit-delta
+  :ensure t
+              :after magit
+              :config
+              (setq
+               magit-delta-default-dark-theme "GitHub"
+               magit-delta-default-light-theme "GitHub"
+               magit-delta-hide-plus-minus-markers nil)
+              (magit-delta-mode))
+
+(with-eval-after-load 'org
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((sql . t))))
+
+;; (use-package doom-modeline
+;;   :ensure t
+;;   :init (doom-modeline-mode 1))
+
+;; (use-package nerd-icons
+;;   :ensure t
+;;   :custom (nerd-icons-font-family "RobotoMono Nerd Font"))
+
+(setq projectile-create-missing-test-files t)
+
+(defun run-server ()
+  "Runs the Emacs server if it is not running"
+  (require 'server)
+  (unless (server-running-p)
+    (server-start)))
+
+(run-server)
+
+;; (use-package ggtags
+;;   :ensure t
+;;   :config
+;;   (add-hook 'c-mode-common-hook
+;;             (lambda ()
+;;               (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'ruby-base-mode 'ruby-mode 'ruby-ts-mode)
+;;                 (ggtags-mode 1))))
+;;   ;; Optional: Make ggtags the default backend for xref
+;;   (add-to-list 'xref-backend-functions 'ggtags--xref-backend))
+
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name
+        "straight/repos/straight.el/bootstrap.el"
+        (or (bound-and-true-p straight-base-dir)
+            user-emacs-directory)))
+      (bootstrap-version 7))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
