@@ -27,8 +27,8 @@
               window-combination-resize nil) ; Do not resize windows proportionally
 
 (set-face-attribute 'window-divider nil :foreground (face-background 'default))
-(set-face-attribute 'window-divider-first-pixel nil :foreground (face-background 'default))
-(set-face-attribute 'window-divider-last-pixel nil :foreground (face-background 'default))
+;; (set-face-attribute 'window-divider-first-pixel nil :foreground (face-background 'default))
+;; (set-face-attribute 'window-divider-last-pixel nil :foreground (face-background 'default))
 
 (window-divider-mode 1)
 
@@ -51,24 +51,27 @@
 
 (require 'nano-modeline)
 
-;;Install the modeline for all prog buffers:
-(add-hook 'prog-mode-hook
-   (lambda () (nano-modeline nano-modeline-format-default)))
-(add-hook 'text-mode-hook (lambda () (nano-modeline nano-modeline-format-default)))
-(add-hook 'org-mode-hook (lambda () (nano-modeline nano-modeline-format-org-lookup)))
+(add-hook 'after-change-major-mode-hook
+          (lambda ()
+            (nano-modeline
+             (cond
+              ((derived-mode-p 'vterm-mode 'term-mode) nano-modeline-format-terminal)
+              ((derived-mode-p 'calendar-mode) nano-modeline-format-calendar)
+              ((derived-mode-p 'org-capture-mode) nano-modeline-format-org-capture)
+              ((derived-mode-p 'org-mode) nano-modeline-format-org-lookup)
+              ((derived-mode-p 'elpher-mode) nano-modeline-format-elpher)
+              ((derived-mode-p 'nano-agenda-mode) nano-modeline-format-nano-agenda)
+              ((derived-mode-p 'elfeed-search-mode) nano-modeline-format-elfeed-search)
+              ((derived-mode-p 'elfeed-show-mode) nano-modeline-format-elfeed-entry)
+              ((derived-mode-p 'mu4e-headers-mode) nano-modeline-format-mu4e-headers)
+              ((derived-mode-p 'mu4e-view-mode) nano-modeline-format-mu4e-message)
+              ((derived-mode-p 'mu4e-compose-mode) nano-modeline-format-mu4e-compose)
+              (t nano-modeline-format-default)))))
 
-;; (add-hook 'org-mode-hook             #'nano-modeline-org-mode)
-;; (add-hook 'pdf-view-mode-hook        #'nano-modeline-pdf-mode)
-;; (add-hook 'mu4e-headers-mode-hook    #'nano-modeline-mu4e-headers-mode)
-;; (add-hook 'mu4e-view-mode-hook       #'nano-modeline-mu4e-message-mode)
-;; (add-hook 'elfeed-show-mode-hook     #'nano-modeline-elfeed-entry-mode)
-;; (add-hook 'elfeed-search-mode-hook   #'nano-modeline-elfeed-search-mode)
-(add-hook 'vterm-mode-hook (lambda () (nano-modeline nano-modeline-format-terminal)))
-(add-hook 'term-mode-hook (lambda () (nano-modeline nano-modeline-format-terminal)))
-;; (add-hook 'xwidget-webkit-mode-hook  #'nano-modeline-xwidget-mode)
-;; (add-hook 'messages-buffer-mode-hook #'nano-modeline-message-mode)
-;; (add-hook 'org-capture-mode-hook     #'nano-modeline-org-capture-mode)
-;; (add-hook 'org-agenda-mode-hook      #'nano-modeline-org-agenda-mode)
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (with-current-buffer "*Messages*"
+              (nano-modeline nano-modeline-format-default))))
 
 ;; This adds a box around all buffer
 (require 'nano-box)
