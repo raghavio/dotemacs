@@ -284,3 +284,14 @@
       (goto-char (point-max))
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
+
+(use-package aidermacs
+  :straight (:host github :repo "MatthewZMD/aidermacs" :files ("*.el"))
+  :config
+  (setq aidermacs-default-model "sonnet")
+  (global-set-key (kbd "C-c c") 'aidermacs-transient-menu) ; a is for agenda. remembering c for cursor, idk.
+  ; Enable minor mode for Aider files
+  (aidermacs-setup-minor-mode)
+  ; See the Configuration section below
+  (setq aidermacs-use-architect-mode t)
+  (setq aidermacs-backend 'vterm))
