@@ -1,0 +1,550 @@
+#+TITLE: Personal Emacs Configuration
+#+AUTHOR: Raghav
+#+PROPERTY: header-args:emacs-lisp :tangle init.el :comments link
+#+STARTUP: overview
+#+AUTO_TANGLE: t
+
+* Table of Contents :TOC:
+- [[#introduction][Introduction]]
+- [[#early-initialization][Early Initialization]]
+- [[#core-settings][Core Settings]]
+  - [[#authentication][Authentication]]
+  - [[#encoding--font][Encoding & Font]]
+  - [[#performance][Performance]]
+- [[#ui--appearance][UI & Appearance]]
+  - [[#theme][Theme]]
+  - [[#window-management][Window Management]]
+- [[#completion--navigation][Completion & Navigation]]
+  - [[#vertico--consult][Vertico & Consult]]
+  - [[#company-mode][Company Mode]]
+  - [[#treemacs][Treemacs]]
+- [[#editing-enhancements][Editing Enhancements]]
+  - [[#yasnippet][YASnippet]]
+  - [[#keybindings][Keybindings]]
+- [[#language-server-protocol][Language Server Protocol]]
+  - [[#eglot][Eglot]]
+  - [[#jarchive][Jarchive]]
+- [[#programming-languages][Programming Languages]]
+  - [[#ruby--rails][Ruby & Rails]]
+  - [[#tree-sitter][Tree-sitter]]
+- [[#version-control][Version Control]]
+  - [[#magit--forge][Magit & Forge]]
+  - [[#magit-delta][Magit Delta]]
+- [[#ai-assistance][AI Assistance]]
+  - [[#gptel][GPtel]]
+- [[#utilities][Utilities]]
+  - [[#terminal][Terminal]]
+  - [[#search][Search]]
+  - [[#popup-management][Popup Management]]
+  - [[#sql-formatting][SQL Formatting]]
+- [[#org-mode-configuration][Org Mode Configuration]]
+
+* Introduction
+This is a literate configuration file for Emacs using org-babel.
+All code blocks are tangled to generate the actual configuration files.
+
+** Workflow
+
+This repository uses *literate programming* with org-babel:
+
+1. **Source of Truth**: =config.org= (this file) - committed to git
+2. **Generated Files**: =init.el=, =key-bindings.el=, =preload/preload.el= - NOT committed
+3. **Auto-generated** via hooks and saved automatically
+
+*** Editing Configuration
+
+#+begin_example
+1. Open config.org in Emacs
+2. Make your changes
+3. Save (C-x C-s) - automatically tangles!
+4. Restart Emacs (or M-x load-file init.el)
+5. Commit config.org only
+#+end_example
+
+*Note:* When you save =config.org=, it automatically tangles to =init.el= and other files.
+You'll see "Tangled X code blocks" in the minibuffer.
+
+*** After Git Clone / Pull
+
+#+begin_example
+cd ~/.emacs.d
+git clone <your-repo>
+cd personal
+emacs --batch --eval "(require 'org)" --eval "(org-babel-tangle-file \"config.org\")"
+# Or just open Emacs and it will load config.org, then save it to tangle
+#+end_example
+
+The =post-merge= git hook automatically tangles after =git pull= if =config.org= changed.
+
+*** Important Rules
+
+- ✅ **DO** edit =config.org=
+- ✅ **DO** save to auto-tangle (or =C-c C-v t=)
+- ✅ **DO** commit =config.org= only
+- ❌ **DON'T** edit =init.el= or =key-bindings.el= directly (they're auto-generated)
+- ❌ **DON'T** commit =init.el= or =key-bindings.el= (they're gitignored)
+- ❌ **DON'T** commit API keys (use =~/.authinfo=)
+
+The generated =.el= files contain comments showing they came from this file.
+
+* Early Initialization
+Configuration that must run before Prelude loads.
+This is stored in =personal/preload/preload.el=.
+
+#+begin_src emacs-lisp :tangle preload/preload.el
+;; Disable Prelude's default theme so we can set our own
+(setq prelude-theme nil)
+#+end_src
+
+* Core Settings
+
+** Authentication
+#+begin_src emacs-lisp
+;; Use ~/.authinfo for credentials (GPG encrypted recommended)
+(setq auth-sources '("~/.authinfo"))
+#+end_src
+
+** Encoding & Font
+#+begin_src emacs-lisp
+;; Load custom packages directory
+(add-to-list 'load-path "~/.emacs.d/packages/")
+
+;; Set UTF-8 as default encoding
+(set-language-environment "UTF-8")
+
+;; Font configuration
+;; Requires JetBrains Mono font to be installed
+(set-frame-font "JetBrains Mono-14" nil t)
+(setq-default line-spacing 0.2)
+#+end_src
+
+** Performance
+#+begin_src emacs-lisp
+;; Disable line length highlighting (can be slow in large files)
+(setq prelude-whitespace nil)
+
+;; Disable Prelude's super keybindings to avoid conflicts
+(setq prelude-super-keybindings nil)
+#+end_src
+
+* UI & Appearance
+
+** Theme
+#+begin_src emacs-lisp
+;; ef-themes: Legible themes by Protesilaos Stavrou
+(use-package ef-themes
+  :ensure t
+  :config
+  ;; Toggle between light and dark theme
+  (setq ef-themes-to-toggle '(ef-melissa-light ef-duo-dark))
+  ;; Clear any existing themes
+  (mapc #'disable-theme custom-enabled-themes)
+  ;; Load default light theme
+  (ef-themes-select 'ef-melissa-light))
+#+end_src
+
+** Window Management
+#+begin_src emacs-lisp
+;; Platform-specific keybinding setup
+(when (eq system-type 'darwin)
+  ;; On macOS, use Command as Control modifier
+  (setq mac-command-modifier 'control)
+  (setq mac-control-modifier 'super))
+#+end_src
+
+* Completion & Navigation
+
+** Vertico & Consult
+Vertico is enabled via =prelude-vertico= module in =prelude-modules.el=.
+
+** Company Mode
+Company mode is enabled via =prelude-company= module in =prelude-modules.el=.
+
+#+begin_src emacs-lisp
+;; Add robe backend for Ruby completion
+(use-package company
+  :ensure t
+  :config
+  (add-to-list 'company-backends 'company-robe))
+#+end_src
+
+** Treemacs
+File tree explorer for project navigation.
+
+#+begin_src emacs-lisp
+(use-package treemacs
+  :ensure t
+  :defer t
+  :config
+  (setq treemacs-width 40
+        ;; Faster file event detection (default 2000ms)
+        treemacs-file-event-delay 500
+        ;; Faster follow delay (default 0.2s)
+        treemacs-file-follow-delay 0.1)
+  ;; Auto-follow current file and project
+  (treemacs-project-follow-mode)
+  (treemacs-follow-mode)
+  (treemacs-filewatch-mode))
+
+(use-package treemacs-projectile
+  :ensure t
+  :after (treemacs projectile))
+#+end_src
+
+* Editing Enhancements
+
+** YASnippet
+Snippet expansion system.
+
+#+begin_src emacs-lisp
+(use-package yasnippet
+  :ensure t
+  :config
+  (yas-global-mode 1))
+#+end_src
+
+** Keybindings
+Custom keybindings for improved workflow.
+
+#+begin_src emacs-lisp :tangle key-bindings.el
+;;; key-bindings.el --- Personal keybindings
+
+;;; Commentary:
+;; Custom keybindings that override or extend Prelude defaults
+
+;;; Code:
+
+;; === Quick Command Access ===
+;; Execute M-x with a key chord (,, pressed quickly)
+(key-chord-define-global ",," 'execute-extended-command)
+
+;; === Tool Access ===
+;; C-1: Toggle treemacs (file explorer)
+(defun my/treemacs-toggle ()
+  "Toggle Treemacs. If Treemacs is open, select the window. If in Treemacs buffer, close it."
+  (interactive)
+  (require 'treemacs)
+  (if (treemacs-is-treemacs-window-selected?)
+      (delete-window)
+    (if (treemacs-get-local-window)
+        (treemacs-select-window)
+      (treemacs))))
+
+(global-set-key (kbd "C-1") 'my/treemacs-toggle)
+
+;; C-3: Open Magit status
+(global-set-key (kbd "C-3") 'magit-status)
+
+;; === Navigation ===
+;; M-p/M-n: Navigate by paragraph (more useful than default)
+(global-unset-key (kbd "M-}"))
+(global-unset-key (kbd "M-{"))
+(global-set-key (kbd "M-p") 'backward-paragraph)
+(global-set-key (kbd "M-n") 'forward-paragraph)
+
+;; === Buffer Management ===
+;; C-x k: Kill current buffer without prompting
+(global-set-key (kbd "C-x k") 'kill-current-buffer)
+
+;; === Unbind Problematic Keys ===
+;; C-z: Disable suspend frame (accidentally triggered often)
+(global-unset-key (kbd "C-z"))
+
+;; M-?: Free for xref-find-references (smartparens uses this)
+(define-key smartparens-mode-map (kbd "M-?") nil)
+
+(provide 'key-bindings)
+;;; key-bindings.el ends here
+#+end_src
+
+* Language Server Protocol
+
+** Eglot
+Built-in LSP client for Emacs 29+.
+
+#+begin_src emacs-lisp
+(use-package eglot
+  ;; NOTE: Auto-start is disabled. Enable per-mode with hooks if needed
+  ;; Example: :hook (python-mode . eglot-ensure)
+  :bind (("M-TAB" . completion-at-point)
+         ("M-g i" . imenu)
+         ("C-h ." . display-local-help)
+         ("M-." . xref-find-definitions)
+         ("M-," . xref-go-back)
+         :map eglot-mode-map
+         ("C-c e a" . eglot-code-actions)
+         ("C-c e o" . eglot-code-actions-organize-imports)
+         ("C-c e r" . eglot-rename)
+         ("C-c e f" . eglot-format))
+  :config
+  ;; Auto-completion timer (currently DISABLED)
+  ;; This provides automatic completion-at-point after a delay
+  ;; Uncomment the add-hook section below to enable
+  (defvar complete-at-point--timer nil
+    "Timer for triggering complete-at-point.")
+
+  (defun auto-complete-at-point (&rest _)
+    "Trigger completion at point after 0.2 seconds of idle time."
+    (when (and (not (minibufferp)))
+      ;; Cancel existing timer if user types
+      (when (timerp complete-at-point--timer)
+        (cancel-timer complete-at-point--timer))
+      (setq complete-at-point--timer
+            (run-at-time 0.2 nil
+                         (lambda ()
+                           (when (timerp complete-at-point--timer)
+                             (cancel-timer complete-at-point--timer))
+                           (setq complete-at-point--timer nil)
+                           (completion-at-point))))))
+
+  ;; Uncomment to enable auto-completion in eglot buffers:
+  ;; (add-hook 'eglot-managed-mode-hook
+  ;;           (lambda ()
+  ;;             (if eglot--managed-mode
+  ;;                 (add-hook 'post-self-insert-hook #'auto-complete-at-point nil t)
+  ;;               (remove-hook 'post-self-insert-hook #'auto-complete-at-point t))))
+  )
+#+end_src
+
+** Jarchive
+Allows opening files inside JAR archives (useful for Java/Clojure).
+
+#+begin_src emacs-lisp
+(use-package jarchive
+  :ensure t
+  :after eglot
+  :config
+  (jarchive-mode))
+#+end_src
+
+* Programming Languages
+
+** Ruby & Rails
+Complete Ruby on Rails development setup.
+
+#+begin_src emacs-lisp
+;; Tree-sitter based Ruby mode
+(use-package ruby-ts-mode
+  :mode "\\.rb\\'"
+  :mode "Rakefile\\'"
+  :mode "Gemfile\\'"
+  :hook (ruby-ts-mode . subword-mode)
+  :custom
+  (ruby-indent-level 2)
+  (ruby-indent-tabs-mode nil))
+
+;; Interactive Ruby REPL
+(use-package inf-ruby
+  :ensure t
+  :config
+  (add-hook 'after-init-hook 'inf-ruby-switch-setup)
+  (add-hook 'compilation-filter-hook 'inf-ruby-auto-enter-and-focus)
+  (add-hook 'ruby-base-mode 'inf-ruby-minor-mode)
+  (inf-ruby-enable-auto-breakpoint))
+
+;; Robe: Ruby code navigation and documentation
+(use-package robe
+  :ensure t
+  :hook ((ruby-mode . robe-mode)
+         (ruby-ts-mode . robe-mode)))
+
+;; Projectile Rails: Rails-specific navigation
+(use-package projectile-rails
+  :ensure t
+  :after projectile
+  :diminish projectile-rails-mode
+  :hook ((ruby-mode . projectile-rails-mode)
+         (ruby-ts-mode . projectile-rails-mode)
+         (projectile-mode . projectile-rails-global-mode))
+  :config
+  ;; Use completing-read for Vertico compatibility
+  (setq projectile-rails-completion-system 'completing-read)
+  (define-key projectile-rails-mode-map (kbd "C-c r") 'projectile-rails-command-map))
+
+;; RuboCop: Ruby linter and formatter
+(use-package rubocop
+  :ensure t
+  :config
+  (add-hook 'ruby-mode-hook #'rubocop-mode)
+  ;; WARNING: This formats on every save, which can be slow
+  ;; Consider setting to nil and using manual format command
+  (setq rubocop-format-on-save t))
+
+;; Projectile: Create missing test files automatically
+(setq projectile-create-missing-test-files t)
+#+end_src
+
+** Tree-sitter
+Modern parsing for syntax highlighting and code understanding.
+
+#+begin_src emacs-lisp
+;; Tree-sitter language grammar sources
+;; Install with: M-x treesit-install-language-grammar
+(setq treesit-language-source-alist
+   '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+     (cmake "https://github.com/uyha/tree-sitter-cmake")
+     (css "https://github.com/tree-sitter/tree-sitter-css")
+     (elisp "https://github.com/Wilfred/tree-sitter-elisp")
+     (html "https://github.com/tree-sitter/tree-sitter-html")
+     (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
+     (json "https://github.com/tree-sitter/tree-sitter-json")
+     (make "https://github.com/alemuller/tree-sitter-make")
+     (markdown "https://github.com/ikatyang/tree-sitter-markdown")
+     (python "https://github.com/tree-sitter/tree-sitter-python")
+     (toml "https://github.com/tree-sitter/tree-sitter-toml")
+     (yaml "https://github.com/ikatyang/tree-sitter-yaml")
+     (ruby "https://github.com/tree-sitter/tree-sitter-ruby")))
+#+end_src
+
+* Version Control
+
+** Magit & Forge
+Git interface and GitHub/GitLab integration.
+
+#+begin_src emacs-lisp
+(use-package forge
+  :ensure t
+  :after magit)
+#+end_src
+
+** Magit Delta
+Enhanced diff display using delta.
+
+#+begin_src emacs-lisp
+(use-package magit-delta
+  :ensure t
+  :after magit
+  :config
+  (setq magit-delta-default-dark-theme "GitHub"
+        magit-delta-default-light-theme "GitHub"
+        magit-delta-hide-plus-minus-markers nil)
+  (magit-delta-mode))
+#+end_src
+
+* AI Assistance
+
+** GPtel
+ChatGPT/Gemini integration for Emacs.
+
+API keys are securely stored in =~/.authinfo= and retrieved using auth-source.
+
+#+begin_src emacs-lisp
+(use-package gptel
+  :ensure t
+  :config
+  ;; Default to Gemini model
+  (setq gptel-model 'gemini-2.5-pro-exp-03-25)
+
+  ;; Retrieve Gemini API key from ~/.authinfo
+  ;; Format in ~/.authinfo: machine generativelanguage.googleapis.com login apikey password YOUR_KEY
+  (setq gptel-backend (gptel-make-gemini "Gemini"
+                        :key (auth-source-pick-first-password
+                              :host "generativelanguage.googleapis.com")
+                        :stream t))
+
+  ;; Retrieve OpenAI API key from ~/.authinfo
+  ;; Format in ~/.authinfo: machine api.openai.com login apikey password YOUR_KEY
+  (setq gptel-api-key (auth-source-pick-first-password
+                       :host "api.openai.com")))
+#+end_src
+
+* Utilities
+
+** Terminal
+#+begin_src emacs-lisp
+;; VTerm: Full-featured terminal emulator
+(use-package vterm
+  :ensure t)
+#+end_src
+
+** Search
+#+begin_src emacs-lisp
+;; Ripgrep integration
+(use-package rg
+  :ensure t)
+#+end_src
+
+** Popup Management
+#+begin_src emacs-lisp
+;; Popper: Manage popup windows elegantly
+(use-package popper
+  :ensure t
+  :bind (("C-`"   . popper-toggle)
+         ("M-`"   . popper-cycle)
+         ("C-M-`" . popper-toggle-type))
+  :init
+  ;; Buffers to treat as popups
+  (setq popper-reference-buffers
+        '("\\*Messages\\*"
+          "Output\\*$"
+          "\\*Async Shell Command\\*"
+          "\\*rg\\*"
+          "\\*xref\\*"
+          "\\*Occur\\*"
+          "\\*Backtrace\\*"
+          help-mode
+          compilation-mode
+          "^\\*eshell.*\\*$" eshell-mode
+          "^\\*shell.*\\*$"  shell-mode
+          "^\\*term.*\\*$"   term-mode
+          "^\\*vterm*\\*$"  vterm-mode))
+  (popper-mode +1)
+  (popper-echo-mode +1)
+  (setq popper-window-height 0.25)
+  (setq popper-group-function #'popper-group-by-projectile))
+#+end_src
+
+** SQL Formatting
+#+begin_src emacs-lisp
+(use-package sqlformat
+  :ensure t
+  :hook (sql-mode . sqlformat-on-save-mode)
+  :custom
+  (sqlformat-command "/home/raghav/.local/bin/sqlformat")
+  (sqlformat-args '("-k" "upper" "-r" "")))
+#+end_src
+
+* Org Mode Configuration
+#+begin_src emacs-lisp
+;; Enable SQL code blocks in org-babel
+(with-eval-after-load 'org
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((sql . t)
+     (emacs-lisp . t))))
+#+end_src
+
+* Additional Tools
+#+begin_src emacs-lisp
+;; ElDoc: Show function signatures in minibuffer
+(use-package eldoc
+  :init
+  (global-eldoc-mode))
+
+;; Markdown mode
+(use-package markdown-mode
+  :ensure t
+  :magic "\\.md\\'")
+#+end_src
+
+* Server
+#+begin_src emacs-lisp
+;; Start Emacs server for emacsclient
+(defun run-server ()
+  "Start the Emacs server if not already running."
+  (require 'server)
+  (unless (server-running-p)
+    (server-start)))
+
+(run-server)
+#+end_src
+
+* Footer
+#+begin_src emacs-lisp
+(provide 'config)
+;;; config.org ends here
+#+end_src
+
+# Local Variables:
+# eval: (add-hook 'after-save-hook (lambda () (when (eq major-mode 'org-mode) (org-babel-tangle))) nil t)
+# End:

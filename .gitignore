@@ -32,3 +32,12 @@ var/
 .lsp-session*
 gotools/
 eln-cache/
+.aider*
+straight/
+.authinfo
+.authinfo.gpg
+
+# Generated files from config.org (tangled via org-babel)
+personal/init.el
+personal/key-bindings.el
+personal/preload/preload.el
