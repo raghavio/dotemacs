@@ -4,7 +4,7 @@
 #+STARTUP: overview
 #+AUTO_TANGLE: t
 
-* Table of Contents :TOC:
+* TODO Table of Contents                                                :TOC:
 - [[#introduction][Introduction]]
 - [[#early-initialization][Early Initialization]]
 - [[#core-settings][Core Settings]]
@@ -13,6 +13,8 @@
   - [[#performance][Performance]]
 - [[#ui--appearance][UI & Appearance]]
   - [[#theme][Theme]]
+  - [[#nano-emacs-ui][NANO Emacs UI]]
+  - [[#theme-commands][Theme Commands]]
   - [[#window-management][Window Management]]
 - [[#completion--navigation][Completion & Navigation]]
   - [[#vertico--consult][Vertico & Consult]]
@@ -141,7 +143,61 @@ This is stored in =personal/preload/preload.el=.
   (mapc #'disable-theme custom-enabled-themes)
   ;; Load default light theme
   (ef-themes-select 'ef-melissa-light))
+
+;; Fix mode-line and header-line after ANY theme changes
+(defun my/fix-nano-theme-colors (&rest _)
+  "Hide the bottom mode-line and style header-line with theme colors."
+  ;; First, capture the mode-line background color before hiding it
+  (let ((modeline-bg (face-background 'mode-line nil t)))
+
+    ;; Style header-line with the mode-line's background color
+    (set-face-attribute 'header-line nil
+                        :background modeline-bg
+                        :box `(:line-width 1 :color ,(face-background 'default))
+                        :underline nil
+                        :inherit 'unspecified)
+
+    ;; Now hide the bottom mode-line
+    (set-face-attribute 'mode-line nil
+                        :background (face-background 'default)
+                        :foreground (face-background 'default)
+                        :underline nil
+                        :height 1 :overline nil :box nil)
+    (set-face-attribute 'mode-line-inactive nil
+                        :background (face-background 'default)
+                        :foreground (face-background 'default)
+                        :underline nil
+                        :height 1 :overline nil :box nil)))
+
+;; Apply after initial theme load
+(my/fix-nano-theme-colors)
+
+;; Re-apply after any theme is loaded (works with all theme functions)
+(advice-add 'load-theme :after #'my/fix-nano-theme-colors)
 #+end_src
+
+** NANO Emacs UI
+Load NANO Emacs with customizations for JetBrains Mono font and Vertico compatibility.
+
+The vendor/nano.el file has been modified to:
+- Use JetBrains Mono font instead of Roboto Mono
+- Disable icomplete-vertical-mode (conflicts with Vertico)
+- Disable icomplete configuration and keybindings
+- Use flexible frame dimensions (16px border, no fixed size)
+- Simplify minibuffer setup (just margins, no fancy prompt tricks)
+- Remove theme code (use ef-themes instead)
+
+#+begin_src emacs-lisp
+;; Load customized NANO Emacs
+(load-file "~/.emacs.d/vendor/nano.el")
+
+;; Adjust font size to our preference (nano.el sets height 140 which is ~14pt)
+(set-frame-font "JetBrains Mono-14" nil t)
+(setq-default line-spacing 0.2)
+#+end_src
+
+** Theme Commands
+Toggle between ef-themes light and dark with =M-x ef-themes-toggle=
 
 ** Window Management
 #+begin_src emacs-lisp
